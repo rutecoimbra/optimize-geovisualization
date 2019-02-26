@@ -1,0 +1,187 @@
+PROCESSING XRD DATA TO GENERATE 3D BLOCKS:
+
+
+1- CREATE FOLDER "Test" ON DESKTOP CONTAINING XRD RESULTS (EXCEL OR CSV FILES);
+
+---------------------------------
+
+2- COMBINE MULTIPLE EXCEL FILES INTO ONE SINGLE EXCEL FILE WITH MULTIPLE SHEETS (CODE A1)
+
+in https://trumpexcel.com/combine-multiple-workbooks-one-excel-workbooks/
+
+Sub ConslidateWorkbooks()
+'Created by Sumit Bansal from https://trumpexcel.com
+Dim FolderPath As String
+Dim Filename As String
+Dim Sheet As Worksheet
+Application.ScreenUpdating = False
+FolderPath = Environ("userprofile") & "\Desktop\Test\"
+Filename = Dir(FolderPath & "*.xls*")
+Do While Filename <> ""
+ Workbooks.Open Filename:=FolderPath & Filename, ReadOnly:=True
+ For Each Sheet In ActiveWorkbook.Sheets
+ Sheet.Copy After:=ThisWorkbook.Sheets(1)
+ Next Sheet
+ Workbooks(Filename).Close
+ Filename = Dir()
+Loop
+Application.ScreenUpdating = True
+End Sub
+
+
+ALTERNATIVELY, IF THE ORIGINAL FILES ARE CSV FILES: transform *csv files directly into Excel worksheets (CODEA2)
+
+in https://stackoverflow.com/questions/17654088/merge-multiple-csv-files-in-one-excel-sheet
+
+Sub Example12()
+Dim MyPath As String
+Dim FilesInPath As String
+Dim MyFiles() As String
+Dim SourceRcount As Long
+Dim Fnum As Long
+Dim mybook As Workbook
+Dim basebook As Workbook
+
+'Fill in the path\folder where the files are
+'on your machine
+MyPath = "C:\Users\xxxx\Desktop\Test"
+
+'Add a slash at the end if the user forget it
+If Right(MyPath, 1) <> "\" Then
+MyPath = MyPath & "\"
+End If
+
+'If there are no Excel files in the folder exit the sub
+FilesInPath = Dir(MyPath & "*.csv")
+If FilesInPath = "" Then
+MsgBox "No files found"
+Exit Sub
+End If
+
+On Error GoTo CleanUp
+
+Application.ScreenUpdating = False
+Set basebook = ThisWorkbook
+
+'Fill the array(myFiles)with the list of Excel files in the folder
+Fnum = 0
+Do While FilesInPath <> ""
+Fnum = Fnum + 1
+ReDim Preserve MyFiles(1 To Fnum)
+MyFiles(Fnum) = FilesInPath
+FilesInPath = Dir()
+Loop
+
+'Loop through all files in the array(myFiles)
+If Fnum > 0 Then
+For Fnum = LBound(MyFiles) To UBound(MyFiles)
+Set mybook = Workbooks.Open(MyPath & MyFiles(Fnum))
+mybook.Worksheets(1).Copy after:= _
+basebook.Sheets(basebook.Sheets.Count)
+
+On Error Resume Next
+ActiveSheet.Name = mybook.Name
+On Error GoTo 0
+
+' You can use this if you want to copy only the values
+' With ActiveSheet.UsedRange
+' .Value = .Value
+' End With
+
+mybook.Close savechanges:=False
+Next Fnum
+End If
+CleanUp:
+Application.ScreenUpdating = True
+End Sub
+
+----------------------------------------------
+
+3- TAB NAMES FOR SAMPLES 1 to 10, ADD SYMBOL (#) TO SAMPLE NUMBERS:
+
+P1-> P#1
+P2-> P#2
+...
+P10 and following: no change is necessary
+
+This step ensures that the samples can be ordered correctly along the final file (alphanumerically).
+
+-----------------------------------------------
+
+4- ORDER WORKSHEETS ASCENDENT/DESCENDENT (Code B)
+
+in https://superuser.com/questions/1022575/need-a-macro-that-can-reorder-sheets-in-an-excel-spreadsheet
+
+Sub Sort_Active_Book()
+Dim i As Integer
+Dim j As Integer
+Dim iAnswer As VbMsgBoxResult
+'
+' Prompt the user as which direction they wish to
+' sort the worksheets.
+'
+   iAnswer = MsgBox("Sort Sheets in Ascending Order?" & Chr(10) _
+     & "Clicking No will sort in Descending Order", _
+     vbYesNoCancel + vbQuestion + vbDefaultButton1, "Sort Worksheets")
+   For i = 1 To Sheets.Count
+      For j = 1 To Sheets.Count - 1
+'
+' If the answer is Yes, then sort in ascending order.
+'
+         If iAnswer = vbYes Then
+            If UCase$(Sheets(j).Name) > UCase$(Sheets(j + 1).Name) Then
+               Sheets(j).Move After:=Sheets(j + 1)
+            End If
+'
+' If the answer is No, then sort in descending order.
+'
+         ElseIf iAnswer = vbNo Then
+            If UCase$(Sheets(j).Name) < UCase$(Sheets(j + 1).Name) Then
+               Sheets(j).Move After:=Sheets(j + 1)
+            End If
+         End If
+      Next j
+   Next i
+End Sub
+
+-----------------------------------------------
+5- DELETE HEADERS (LINES 1 TO 27) IN ALL SHEETS (CODE C)
+
+in https://www.extendoffice.com/documents/excel/3641-excel-delete-rows-across-multiple-sheets.html
+
+Sub bleh()
+    Dim xWs As Worksheet
+    Set xWs = ActiveSheet
+    ThisWorkbook.Worksheets.Select
+    Rows("1:27").Select
+    Selection.Delete
+    xWs.Select
+End Sub
+
+
+------------------------------------------------
+6- COMBINE ALL SHEETS INTO ONE (CODE D)
+
+
+in https://www.extendoffice.com/documents/excel/1184-excel-merge-multiple-worksheets-into-one.html
+
+Sub Combine()
+Dim J As Integer
+On Error Resume Next
+Sheets(1).Select
+Worksheets.Add
+Sheets(1).Name = "Combined"
+Sheets(2).Activate
+Range("A1").EntireRow.Select
+Selection.Copy Destination:=Sheets(1).Range("A1")
+For J = 2 To Sheets.Count
+Sheets(J).Activate
+Range("A1").Select
+Selection.CurrentRegion.Select
+Selection.Offset(1, 0).Resize(Selection.Rows.Count - 1).Select
+Selection.Copy Destination:=Sheets(1).Range("A200000").End(xlUp)(2)
+Next
+End Sub
+
+-----------------------------------------------
+7- ADD THIRD COLUMN WITH Z COORDINATE (STRATIGRAHIC POSITION or other)
